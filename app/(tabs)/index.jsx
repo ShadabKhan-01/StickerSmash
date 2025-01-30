@@ -1,7 +1,9 @@
 import { Text, View, StyleSheet } from "react-native";
 // import { Link } from "expo-router";
-import { useState } from "react";
+import { useState, useRef } from "react";
 import * as ImagePacker from "expo-image-picker"
+import * as MediaLibrary from 'expo-media-library';
+import { captureRef } from "react-native-view-shot";
 
 
 import ImageViewer from "../../components/ImageViewer";
@@ -19,6 +21,13 @@ export default function Index() {
   const [showAppOptions, setShowAppOptions] = useState(false);
   const [IsModalVisible, setIsModalVisible] = useState(false);
   const [pickedEmoji, setpickedEmoji] = useState()
+
+  const [status, requestPermission] = MediaLibrary.usePermissions()
+  const imageRef = useRef();
+
+  if(status === null){
+    requestPermission();
+  }
 
   pickImageAsync = async () => {
     let result = await ImagePacker.launchImageLibraryAsync({
@@ -50,14 +59,25 @@ export default function Index() {
   };
 
   const onSaveImageAsync = async () => {
-    // we will implement this later
+    try{
+      const localUri = await captureRef(imageRef,{height:440,quality:1});
+      await MediaLibrary.saveToLibraryAsync(localUri);
+      if(localUri){
+        alert("Saved");
+      }
+    }
+    catch(error){
+      console.log(error);
+    }
   };
 
   return (
     <View style={style.container}>
       <View style={style.imageContainer}>
+        <View ref={imageRef} collapsable= {false}>
         <ImageViewer imgSource={selectedImage || PlaceholderImage} />
         {pickedEmoji && <EmojiSticker stickerSource={pickedEmoji} imageSize={40}/>}
+        </View>
       </View>
       {showAppOptions ? (
                 <View style={style.optionsContainer}>
